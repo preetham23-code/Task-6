@@ -60,3 +60,61 @@ Functionality Verification: The comparator accurately determines whether one 2-b
 Challenges Overcome: Overcame challenges in programming the logic and ensuring correct hardware connections.
 Future Improvements: Potential enhancements include expanding the comparator to handle larger bit numbers and optimizing the code for efficiency.
 This project not only demonstrates understanding of digital logic and microcontroller programming but also provides hands-on experience with hardware interfacing and debugging.
+
+#include <stdio.h>
+#include <debug.h>
+#include <ch32v00x.h>
+
+// Configures GPIO Pins for Comparator Operation
+void GPIO_Config(void) {
+    GPIO_InitTypeDef GPIO_InitStructure = {0}; // GPIO configuration structure
+    
+    // Enable clock for GPIO ports
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
+    
+    // Configure input pins (A and B)
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_2;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU; // Input Pull-Up
+    GPIO_Init(GPIOD, &GPIO_InitStructure);
+
+    // Configure output pins (A > B, A < B, A == B)
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; // Output Push-Pull
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; // GPIO speed
+    GPIO_Init(GPIOC, &GPIO_InitStructure);
+}
+
+// Main function
+int main() {
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+    SystemCoreClockUpdate();
+    Delay_Init();
+    GPIO_Config();
+
+    while(1) {
+        // Output the results
+        // A > B
+        if(GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_1) == RESET && GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_2) == SET) {
+            GPIO_WriteBit(GPIOC, GPIO_Pin_4, SET); // Set A > B pin high
+        } else {
+            GPIO_WriteBit(GPIOC, GPIO_Pin_4, RESET); // Set A > B pin low
+        }
+
+        // A < B
+        if(GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_1) == SET && GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_2) == RESET) {
+            GPIO_WriteBit(GPIOC, GPIO_Pin_5, SET); // Set A < B pin high
+        } else {
+            GPIO_WriteBit(GPIOC, GPIO_Pin_5, RESET); // Set A < B pin low
+        }
+
+        // A == B
+        if(GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_1) == GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_2)) {
+            GPIO_WriteBit(GPIOC, GPIO_Pin_6, SET); // Set A == B pin high
+        } else {
+            GPIO_WriteBit(GPIOC, GPIO_Pin_6, RESET); // Set A == B pin low
+        }
+    }
+
+    return 0;
+}
